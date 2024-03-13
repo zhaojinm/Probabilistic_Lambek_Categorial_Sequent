@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<corpus name="LCGbank" version="0.91">
+<partition name="tst" description="test set" sentences="2416">
+  <sentence id="wsj_2300.1">
+    <sentential cat="S_16" />
+    <words>
+      <word text="No" cat="S_1/S_2" />
+      <word text="," />
+      <word text="it" cat="NP_3" />
+      <word text="was" cat="(S_5\NP_4)/NP_6" />
+      <word text="n't" cat="((S_11\NP_10)/NP_12)\((S_8\NP_9)/NP_7)" />
+      <word text="Black" cat="NP_13/NP_14" />
+      <word text="Monday" cat="NP_15" />
+      <word text="." />
+    </words>
+    <matching>
+      <match negative="1" positive="16" />
+      <match positive="2" negative="11" />
+      <match negative="3" positive="10" />
+      <match positive="4" negative="9" />
+      <match negative="5" positive="8" />
+      <match positive="6" negative="7" />
+      <match positive="12" negative="13" />
+      <match positive="14" negative="15" />
+    </matching>
+  </sentence>
+  </partition>
+</corpus>
