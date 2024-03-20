@@ -6,4 +6,4 @@ Before executing the code, replace ./data/ with your custom sets. This repo only
 
 Example command:
 
-```python parametrize_and_test.py --par_depth 2 --lambda_is_par```
+```python parametrize_and_test.py --par_depth 2```
