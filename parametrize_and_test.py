@@ -7,7 +7,7 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Probabilistic Lambek Categorial Sequent")
 
-    parser.add_argument("--par_depth", type=int, default="1", help="depth of parant")
+    parser.add_argument("--par_depth", type=int, default="2", help="depth of parant")
     parser.add_argument("--lambda_is_par", action='store_true', help="consider lambda node as parant node or not")
     
     args = parser.parse_args()
@@ -43,7 +43,7 @@ def load_rule_from_tree(t, args):
 if __name__=='__main__':
     args = parse_arguments()
     print(args)
-    train_trees, train_words, train_matches = load_trees('dev')
+    train_trees, train_words, train_matches = load_trees('trn')
     test_trees, test_words, test_matches = load_trees('tst')
     dev_trees, dev_words, dev_matches = load_trees('dev')
     all_rule = {}
