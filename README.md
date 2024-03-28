@@ -8,9 +8,9 @@ Example command for NLL:
 
 ```python parametrize_and_test.py --par_depth 2```
 
-Example command for ranker:
+Example command for ranker, --max_len is upper bound of the sequent, longer sequent will be skipped:
 
-```python ranker.py  --par_depth 2```
+```python ranker.py  --par_depth 2 --max_len 40```
 
 # Citation
 ```
