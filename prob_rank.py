@@ -29,7 +29,9 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Probabilistic Lambek Categorial Sequent")
 
     parser.add_argument("--par_depth", type=int, default="2", help="depth of parant")
+    parser.add_argument("--max_len", type=int, default="100", help="Skip sequent with length more than this")
     parser.add_argument("--lambda_is_par", action='store_true', help="consider lambda node as parant node or not")
+    parser.add_argument("--gold", type=str, default="", help="Gold parse file")
     
     args = parser.parse_args()
     
@@ -42,12 +44,13 @@ POS = 1
 NEG = 0
 node_num = 0
 train_trees,train_words,train_matches = load_trees('trn')
-test_trees,test_words,test_matches = load_trees('tst')
+if args.gold!="":
+    test_trees,test_words,test_matches = load_trees(args.gold)
 print(len(train_trees))
 count = 0
 all_rule = {}
-for t in train_trees[:]:#+dev_trees[:]:
-    # print(t)
+for t in train_trees[:]:
+
     rule = load_rule_from_tree(t,args)
     for r in rule:
         left,right = r
@@ -61,7 +64,7 @@ for t in train_trees[:]:#+dev_trees[:]:
         count+=rule[r]
 
 print()
-# print(all_rule)
+
 p_rule = {}
 for left in all_rule:
     p = {}
@@ -383,10 +386,7 @@ def parse_sequent(cat_list, empty_premises,get_matching):
         term.par = rhs
     unfolding_formulae = rhs.inorder()
     rhs.set_depth(0)
-    # print(unfolding_formulae)
     f = []
-
-
     # assert [i+1 for i in range(len(unfolding_formulae))] == [e.num for e in unfolding_formulae]
     for l in range(2, len(unfolding_formulae)+1, 2):
         cur_f = []
@@ -395,7 +395,6 @@ def parse_sequent(cat_list, empty_premises,get_matching):
             cur_entry = set()
             result_nodes,start_path,end_path, result_lambda_nodes, result_negativeNodes, result_lambda_pairs \
                 = get_result_node(unfolding_formulae, s, e)
-            # print(s, e, result_nodes, start_path, end_path,result_lambda_nodes)
             #brackeing //todo
             if unfolding_formulae[s-1].prim == unfolding_formulae[e-1].prim and unfolding_formulae[s-1].sign + unfolding_formulae[e-1].sign==1:
                 outer_graph = Graph(result_nodes,result_lambda_pairs,result_negativeNodes,result_lambda_nodes)
@@ -407,8 +406,7 @@ def parse_sequent(cat_list, empty_premises,get_matching):
                     outer_graph.matching.add("("+str(s)+" "+str(e)+")")
                     neg_node = unfolding_formulae[s-1]
                     pos_node = unfolding_formulae[e-1]
-                
-                
+
                 for i,n in enumerate(start_path[:-1]):
                     if i%2==0:
                         outer_graph.addDash(n,start_path[i+1])
@@ -424,7 +422,6 @@ def parse_sequent(cat_list, empty_premises,get_matching):
                     if l==2:
                         cur_entry.add(combine(outer_graph,Graph(set(),set(),set(),set()),result_nodes,result_negativeNodes, result_lambda_pairs,result_lambda_nodes,get_matching))
                     elif inner_entry := f[(l-2)//2-1][s]:
-                        # print("bracketing")
                         for inner_graph in inner_entry:
                             new_graph = combine(outer_graph, inner_graph,result_nodes,result_negativeNodes, result_lambda_pairs,result_lambda_nodes,get_matching)
                             if new_graph:
@@ -435,7 +432,6 @@ def parse_sequent(cat_list, empty_premises,get_matching):
                 right_entry = f[(e-k)//2-1][k]
 
                 if left_entry and right_entry:
-                    # print("adjoin",k)
                     for graph1 in left_entry:
                         for graph2 in right_entry:
                             new_graph = combine(graph1, graph2, result_nodes,result_negativeNodes, result_lambda_pairs,result_lambda_nodes,get_matching)
@@ -445,8 +441,6 @@ def parse_sequent(cat_list, empty_premises,get_matching):
                 cur_f.append(cur_entry)
             else:
                 cur_f.append(None)
-        # print(cur_f)
-        # print()
         f.append(cur_f)
 
     return f
@@ -458,13 +452,12 @@ def get_match_list_of_tuple(strm):
     for i in range(len(strm)//2):
         result.append((int(strm[2*i]), int(strm[2*i+1])))
     return result 
-def parse_txt(folder="trn", empty_premises = False, get_matching=False):
+def parse_txt( args, folder="trn", empty_premises = False, get_matching=False):
     count = 0
     idx = -1
     num_match = []
     num_lex = []
     data = {}
-    max_len = 20
     gold_rank = []
     with open('./data/LCGbank.'+folder+'.str') as f:
         for line in f.readlines()[:]:
@@ -473,7 +466,9 @@ def parse_txt(folder="trn", empty_premises = False, get_matching=False):
             idx += 1
             l = line.split()
             rhs = l[-1]
-            if len(l)>max_len:
+            max_nll_prob = -1000000
+            best_match = []
+            if len(l)>args.max_len:
                 continue
             print("----------------------")
             f = parse_sequent(l[:-2] + [rhs], empty_premises, get_matching)
@@ -491,7 +486,7 @@ def parse_txt(folder="trn", empty_premises = False, get_matching=False):
                                 num_match.append(len(g.matching))
                                 num_lex.append(len(l))
                                 print(line,end='')
-                                if folder=='tst':
+                                if args.gold!="":
                                     print(test_words[idx])
                                     print(test_matches[idx])
                                 print(len(g.matching),"matches")
@@ -511,38 +506,46 @@ def parse_txt(folder="trn", empty_premises = False, get_matching=False):
                                             cur_prob-=1000
                                         else:
                                             cur_prob += math.log(p_rule[left][right])*rule[r]
-                                    if curm_lst==test_matches[idx]:
+                                    print(cur_prob)
+                                    if args.gold!="" and curm_lst==test_matches[idx]:
                                         gold_prob = cur_prob
+                                    if cur_prob > max_nll_prob:
+                                    	max_nll_prob = cur_prob
+                                    	best_match = curm_lst
                                     prob_list.append(cur_prob)
                             answer = True
                         elif empty_premises:
                             if get_matching:
                                 print(len(g.matching))
                             answer=True
+            print("max_nll_prob", max_nll_prob)
             if answer:
                 print("Sequent " + str(count) + " is derivable")
-                print("gold prob: ",gold_prob)
-                print("rank:", np.sum(np.array(prob_list)>gold_prob+0.000000001)+1)
-                gold_rank.append(np.sum(np.array(prob_list)>gold_prob+0.000000001)+1)
+                print("best match: ", best_match)
+                if args.gold!="":
+                    print("gold prob: ",gold_prob)
+                    print("rank:", np.sum(np.array(prob_list)>gold_prob+0.000000001)+1)
+                    gold_rank.append(np.sum(np.array(prob_list)>gold_prob+0.000000001)+1)
             else:
                 print("Sequent " + str(count) + " is not derivable")
             count+=1
-    plotdata = []
-    a = np.array(num_match)
-    b = np.array(gold_rank)
-    print("1 match: ",np.sum(np.array(num_match)==1), " rank 1 ", np.sum(b==1))
-    print("2 match: ",np.sum(np.array(num_match)==2), " rank 2 ", np.sum(b==2))
-    print("3 match: ",np.sum(np.array(num_match)==3), " rank 3 ", np.sum(b==3))
-    print("4 match: ",np.sum(np.array(num_match)==4), " rank 4 ", np.sum(b==4))
-    print("5 match: ",np.sum(np.array(num_match)==5), " rank 5 ", np.sum(b==5))
-    print("6-10 match: ",((6 <= a) & (a <= 10)).sum(), "6-10 rank: ",((6 <= b) & (b <= 10)).sum())
-    print("11-20 match: ",((11 <= a) & (a <= 20)).sum(), "11-20 rank: ",((11 <= b) & (b <= 20)).sum())
-    print("21-50 match: ",((21 <= a) & (a <= 50)).sum(), "21-50 rank: ",((21 <= b) & (b <= 50)).sum())
-    print(">50 match: ",np.sum(np.array(num_match)>50), " rank > 50 ", np.sum(b>50))
-    assert len(gold_rank) == len(num_match)
+    if args.gold!="":
+	    plotdata = []
+	    a = np.array(num_match)
+	    b = np.array(gold_rank)
+	    print("1 match: ",np.sum(np.array(num_match)==1), " rank 1 ", np.sum(b==1))
+	    print("2 match: ",np.sum(np.array(num_match)==2), " rank 2 ", np.sum(b==2))
+	    print("3 match: ",np.sum(np.array(num_match)==3), " rank 3 ", np.sum(b==3))
+	    print("4 match: ",np.sum(np.array(num_match)==4), " rank 4 ", np.sum(b==4))
+	    print("5 match: ",np.sum(np.array(num_match)==5), " rank 5 ", np.sum(b==5))
+	    print("6-10 match: ",((6 <= a) & (a <= 10)).sum(), "6-10 rank: ",((6 <= b) & (b <= 10)).sum())
+	    print("11-20 match: ",((11 <= a) & (a <= 20)).sum(), "11-20 rank: ",((11 <= b) & (b <= 20)).sum())
+	    print("21-50 match: ",((21 <= a) & (a <= 50)).sum(), "21-50 rank: ",((21 <= b) & (b <= 50)).sum())
+	    print(">50 match: ",np.sum(np.array(num_match)>50), " rank > 50 ", np.sum(b>50))
+	    assert len(gold_rank) == len(num_match)
 
 if __name__ == "__main__":
     folder = "tst"
     empty_premises = False
     get_matching = True
-    parse_txt(folder, empty_premises, get_matching)
+    parse_txt(args, folder, empty_premises, get_matching)
