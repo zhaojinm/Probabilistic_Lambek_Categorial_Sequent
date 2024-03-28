@@ -32,6 +32,7 @@ def parse_arguments():
     parser.add_argument("--max_len", type=int, default="100", help="Skip sequent with length more than this")
     parser.add_argument("--lambda_is_par", action='store_true', help="consider lambda node as parant node or not")
     parser.add_argument("--gold", type=str, default="", help="Gold parse file")
+    parser.add_argument("--input", type=str, default="input.txt", help="path of input file")
     
     args = parser.parse_args()
     
@@ -62,8 +63,6 @@ for t in train_trees[:]:
         else:
             all_rule[left] = {right:rule[r]}
         count+=rule[r]
-
-print()
 
 p_rule = {}
 for left in all_rule:
@@ -452,14 +451,14 @@ def get_match_list_of_tuple(strm):
     for i in range(len(strm)//2):
         result.append((int(strm[2*i]), int(strm[2*i+1])))
     return result 
-def parse_txt( args, folder="trn", empty_premises = False, get_matching=False):
+def parse_txt( args, empty_premises = False, get_matching=False):
     count = 0
     idx = -1
     num_match = []
     num_lex = []
     data = {}
     gold_rank = []
-    with open('./data/LCGbank.'+folder+'.str') as f:
+    with open(args.input) as f:
         for line in f.readlines()[:]:
             prob_list = []
             gold_prob = 1000000
@@ -545,7 +544,6 @@ def parse_txt( args, folder="trn", empty_premises = False, get_matching=False):
 	    assert len(gold_rank) == len(num_match)
 
 if __name__ == "__main__":
-    folder = "tst"
     empty_premises = False
     get_matching = True
-    parse_txt(args, folder, empty_premises, get_matching)
+    parse_txt(args, empty_premises, get_matching)
