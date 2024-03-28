@@ -6,7 +6,7 @@ Before executing the code, replace ./data/ with your custom sets. This repo only
 
 Example command for NLL:
 
-```python parametrize_and_test.py --par_depth 2```
+```python parametrize_and_test.py --par_depth 2 --input input.txt```
 
 Example command for ranker, --max_len is upper bound of the sequent, longer sequent will be skipped:
 
