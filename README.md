@@ -10,7 +10,7 @@ Example command for NLL:
 
 Example command for ranker, --max_len is upper bound of the sequent, longer sequent will be skipped:
 
-```python ranker.py  --par_depth 2 --max_len 40 --input input.txt```
+```python prob_rank.py  --par_depth 2 --max_len 40 --input input.txt```
 
 # Citation
 ```
